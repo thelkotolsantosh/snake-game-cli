@@ -1,0 +1,5 @@
+# Snake Game CLI - Requirements
+# This game has NO external dependencies
+# It only uses Python standard library modules
+
+# Python version required: 3.6 or higher
