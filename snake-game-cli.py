@@ -3,8 +3,11 @@ import sys
 import time
 import random
 import threading
-import termios
-import tty
+if os.name == "nt":
+    import msvcrt
+else:
+    import termios
+    import tty
 import shutil
 
 # ===== VIRTUAL RESOLUTION (YOUR REQUEST) =====
@@ -67,7 +70,10 @@ def spawn_obstacles():
 def input_thread():
     global direction, game_over, paused
     while not game_over:
-        ch = sys.stdin.read(1)
+        ch = msvcrt.getwch() if os.name == "nt" else sys.stdin.read(1)
+        if os.name == "nt" and ch in ("\x00", "\xe0"):
+            ch = {"H": "w", "P": "s", "K": "a", "M": "d"}.get(msvcrt.getwch(), "")
+        ch = ch.lower()
 
         if ch == "w" and direction != "DOWN":
             direction = "UP"
@@ -184,11 +190,15 @@ def main():
 
 # ===== RAW TERMINAL INIT =====
 if __name__ == "__main__":
-    fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
-    tty.setcbreak(fd)
-
-    try:
+    if os.name == "nt":
         main()
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    elif not sys.stdin.isatty():
+        sys.exit("Run the game in an interactive terminal.")
+    else:
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        tty.setcbreak(fd)
+        try:
+            main()
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old)
